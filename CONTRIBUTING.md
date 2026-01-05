@@ -265,6 +265,7 @@ New to the codebase? Start here:
 
 - **GitHub Discussions**: Ask questions
 - **GitHub Issues**: Report bugs
+- **HuggingFace**: [@mindchain](https://huggingface.co/mindchain)
 - **Email**: haddock.development@gmail.com
 
 ## 🙏 Thank You!

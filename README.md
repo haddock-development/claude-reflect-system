@@ -520,6 +520,7 @@ A: HIGH = explicit corrections, MEDIUM = approvals, LOW = suggestions. See [USER
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/haddock-development/claude-reflect-system/issues)
 - **Discussions**: [Ask questions](https://github.com/haddock-development/claude-reflect-system/discussions)
+- **HuggingFace**: [@mindchain](https://huggingface.co/mindchain)
 - **Email**: haddock.development@gmail.com
 - **Twitter**: [@haddock_dev](https://twitter.com/haddock_dev) (if available)
 
@@ -532,6 +533,8 @@ Built with:
 - [Python](https://python.org) - Programming language
 - [PyYAML](https://pyyaml.org) - YAML parsing
 - [Git](https://git-scm.com) - Version control
+
+Created by [@mindchain](https://huggingface.co/mindchain)
 
 Inspired by the developer community's desire for AI that actually remembers.
 
