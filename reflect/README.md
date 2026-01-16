@@ -18,13 +18,19 @@ Ein intelligentes Lernsystem für Claude Code, das aus Ihren Korrekturen lernt u
 # Mit AI-powered Semantic Detection (Multi-Language!)
 /reflect --semantic
 
+# Cross-Skill Learnings anzeigen
+/reflect-stats
+
+# Learnings zu global promoten
+/reflect-promote
+
 # Auto-Reflection aktivieren (optional)
 /reflect-on
 ```
 
 ---
 
-## 🧠 NEU: Semantic Detection (v1.1)
+## 🧠 Semantic Detection (v1.1)
 
 ### Was ist das?
 
@@ -46,31 +52,69 @@ Semantic Detection nutzt Claude selbst als ML-Engine für intelligentere Pattern
 🇫🇷 "Non, utilise toujours ruff"          → ✓ Detected
 ```
 
-### Verwendung
+---
+
+## 🔄 NEU: Cross-Skill Learning (v1.2)
+
+### Was ist das?
+
+Learnings werden über Skills und Repositories hinweg getrackt. Wenn ein Learning in 2+ Repos auftaucht, kann es zu deiner globalen `~/.claude/CLAUDE.md` promoted werden.
+
+### Der Workflow
+
+```
+Repo A: "Verwende uv statt pip" → Learning gespeichert
+Repo B: "Verwende uv statt pip" → Gleiche Learning erkannt!
+        ↓
+    Threshold erreicht (2 Repos)
+        ↓
+    /reflect-promote → Global CLAUDE.md
+        ↓
+    Claude weiß es ÜBERALL ✨
+```
+
+### Commands
 
 ```bash
-# Standard (Regex - schnell)
-/reflect
+# Statistiken anzeigen
+/reflect-stats
 
-# Mit Semantic Detection (genauer, multi-language)
-/reflect --semantic
+# Promotion-Kandidaten anzeigen
+python3 ~/.claude/skills/reflect/scripts/promote_learning.py list
 
-# Semantic mit spezifischem Modell
-/reflect --semantic --model sonnet
+# Preview einer Promotion
+python3 ~/.claude/skills/reflect/scripts/promote_learning.py preview <fingerprint>
+
+# Learning promoten
+python3 ~/.claude/skills/reflect/scripts/promote_learning.py promote <fingerprint>
+
+# Alle eligible Learnings promoten
+python3 ~/.claude/skills/reflect/scripts/promote_learning.py all --dry-run
 ```
 
-### Wie funktioniert es?
+### Beispiel Output
 
 ```
-User Message → Claude CLI (haiku) → JSON Analyse
-                    ↓
-              {
-                "is_learning": true,
-                "type": "correction",
-                "confidence": 0.92,
-                "extracted_learning": "Use uv instead of pip"
-              }
+$ python3 promote_learning.py list
+
+2 learnings ready for promotion:
+
+  [a1b2c3d4] (3 repos)
+    Use uv instead of pip for Python projects
+    From: python-project-creator
+
+  [e5f6g7h8] (2 repos)
+    Always run tests before committing
+    From: general
 ```
+
+### Dateien
+
+| Datei | Beschreibung |
+|-------|--------------|
+| `~/.claude/reflect/learnings.db` | SQLite Ledger |
+| `~/.claude/CLAUDE.md` | Globale Regeln |
+| `~/.claude/backups/` | Automatische Backups |
 
 ---
 
@@ -82,6 +126,7 @@ Reflect analysiert Ihre Konversationen mit Claude und:
 - ✅ **Identifiziert Patterns** - Wenn Ansätze gut funktionieren
 - ✅ **Aktualisiert Skills** - Basierend auf Ihrem Feedback
 - ✅ **Versioniert Änderungen** - Mit Git-Integration
+- ✅ **Trackt Cross-Repo** - Erkennt Patterns über Projekte hinweg
 
 ### Das Problem
 
@@ -104,10 +149,11 @@ Session N: Claude verwendet uv ✅
 
 ## 🎯 Features
 
-### Zwei Detection-Modi
+### Drei Detection-Modi
 
 1. **Regex** (Standard) - Schnell, Pattern-basiert
 2. **Semantic** (`--semantic`) - AI-powered, Multi-Language
+3. **Cross-Skill** - Tracking über Repos hinweg
 
 ### Drei Nutzungsmodi
 
@@ -135,266 +181,26 @@ Session N: Claude verwendet uv ✅
 ```
 reflect/
 ├── README.md                  # Diese Datei
-├── USER_GUIDE.md             # Ausführlicher Guide (START HIER!)
+├── USER_GUIDE.md             # Ausführlicher Guide
 ├── SKILL.md                  # Skill-Definition
+├── commands/                 # Slash Commands
+│   ├── reflect-promote.md    # /reflect-promote
+│   └── reflect-stats.md      # /reflect-stats
 ├── scripts/
 │   ├── reflect.py            # Haupt-Engine
 │   ├── extract_signals.py    # Pattern-Detection (Regex + Semantic)
-│   ├── semantic_detector.py  # AI-powered Detection (NEU!)
+│   ├── semantic_detector.py  # AI-powered Detection
+│   ├── learning_ledger.py    # SQLite Cross-Skill Tracking (NEU!)
+│   ├── scope_analyzer.py     # Project vs Global (NEU!)
+│   ├── promote_learning.py   # Promotion zu Global (NEU!)
 │   ├── update_skill.py       # Safe Skill-Updates
 │   ├── present_review.py     # Interactive Review
-│   ├── hook-stop.sh          # Auto-Trigger Hook
-│   ├── toggle-on.sh          # Aktivierung
-│   ├── toggle-off.sh         # Deaktivierung
-│   └── toggle-status.sh      # Status
+│   └── ...
 ├── .state/
-│   ├── auto-reflection.json  # Toggle-Status
-│   └── last-reflection.timestamp
+│   └── auto-reflection.json  # Toggle-Status
 └── references/
     └── signal-patterns.md    # Pattern-Library
 ```
-
----
-
-## 📖 Dokumentation
-
-### **➡️ [USER_GUIDE.md](USER_GUIDE.md) - LESEN SIE DIES ZUERST!**
-
-Der vollständige Guide enthält:
-
-- ✅ Detaillierte Erklärung aller Modi
-- ✅ Praktische Beispiele
-- ✅ Best Practices
-- ✅ Troubleshooting
-- ✅ FAQ
-- ✅ Erweiterte Nutzung
-
-### Quick Links
-
-| Thema | Link |
-|-------|------|
-| **Quick Start** | [USER_GUIDE.md#quick-start](USER_GUIDE.md#quick-start) |
-| **Drei Modi** | [USER_GUIDE.md#die-drei-nutzungsmodi](USER_GUIDE.md#die-drei-nutzungsmodi) |
-| **Beispiele** | [USER_GUIDE.md#praktische-beispiele](USER_GUIDE.md#praktische-beispiele) |
-| **Troubleshooting** | [USER_GUIDE.md#troubleshooting](USER_GUIDE.md#troubleshooting) |
-| **FAQ** | [USER_GUIDE.md#faq](USER_GUIDE.md#faq) |
-
----
-
-## 🎬 Beispiel-Workflow
-
-### 1. Korrektur in Session
-
-```
-User: Erstelle ein Python-Projekt
-
-Claude: Ich verwende pip install...
-
-User: Nein, verwende uv statt pip. Uv ist schneller.
-
-Claude: Ok, verwende jetzt uv install...
-```
-
-### 2. Reflection ausführen
-
-```bash
-/reflect --semantic
-```
-
-### 3. Review
-
-```
-═══════════════════════════════════════
-REFLECTION REVIEW
-═══════════════════════════════════════
-
-## Signals Detected
-
-**python-project-creator**:
-  - HIGH: 1 corrections (semantic: 0.92)
-
-## python-project-creator
-
-```diff
-+## Critical Corrections
-+
-+**Use 'uv' instead of 'pip'**
-+
-+- ✗ Don't: pip install
-+- ✓ Do: uv install
-```
-
-[A]pprove / [M]odify / [S]kip / [Q]uit? A
-
-✓ Approved changes to python-project-creator
-✓ Updated python-project-creator
-✓ Changes committed to git
-```
-
-### 4. Zukünftige Sessions
-
-Claude verwendet automatisch `uv` statt `pip`! ✨
-
----
-
-## 🛠️ Installation & Setup
-
-Das System ist bereits installiert! Konfiguriert in:
-
-- **Skills**: `~/.claude/skills/reflect/`
-- **Hooks**: `~/.claude/settings.local.json`
-- **Git**: `~/.claude/skills/.git/`
-
-Prüfen Sie den Status:
-
-```bash
-/reflect-status
-```
-
----
-
-## ⚙️ Konfiguration
-
-### Auto-Reflection aktivieren
-
-```bash
-/reflect-on
-```
-
-**Empfehlung**: Nutzen Sie zuerst den manuellen Modus (`/reflect`), um das System kennenzulernen.
-
-### Hook-Konfiguration prüfen
-
-```bash
-cat ~/.claude/settings.local.json | grep -A 10 hooks
-```
-
-Sollte enthalten:
-
-```json
-"hooks": {
-  "Stop": [{
-    "hooks": [{
-      "command": "/Users/.../.claude/skills/reflect/scripts/hook-stop.sh",
-      "timeout": 5000
-    }]
-  }]
-}
-```
-
----
-
-## 🔍 Monitoring & Debugging
-
-### Git-History ansehen
-
-```bash
-cd ~/.claude/skills
-git log --oneline --grep="reflection"
-```
-
-### Hook-Logs prüfen
-
-```bash
-tail -f ~/.claude/reflect-hook.log
-```
-
-### Backups finden
-
-```bash
-ls -lt ~/.claude/skills/{skill-name}/.backups/
-```
-
-### Status-Check
-
-```bash
-/reflect-status
-```
-
-### Semantic Detector testen
-
-```bash
-cd ~/.claude/skills/reflect/scripts
-python3 semantic_detector.py "Nein, benutze pytest statt unittest"
-```
-
----
-
-## 🎓 Empfohlener Lernpfad
-
-### Woche 1: Manual Mode
-
-- Täglich `/reflect` nach Sessions mit Korrekturen
-- Verstehen Sie die drei Confidence Levels
-- Lesen Sie die Diffs sorgfältig
-- Experimentieren Sie mit [A]pprove / [S]kip
-
-**Ziel**: System verstehen und vertrauen aufbauen
-
-### Woche 2: Semi-Automatic
-
-- Weiter manuell, aber öfter
-- Git-History regelmäßig prüfen
-- Patterns erkennen
-- Probieren Sie `--semantic` für nicht-englische Korrekturen
-
-**Ziel**: Learnings akkumulieren
-
-### Ab Woche 3: Automatic Mode
-
-```bash
-/reflect-on
-```
-
-- Läuft automatisch bei Session-Ende
-- Prüfen Sie wöchentlich die Git-History
-- Bei Bedarf: `/reflect-off` für kritische Sessions
-
-**Ziel**: Kontinuierliches Lernen ohne manuelle Intervention
-
----
-
-## 📊 Pattern-Erkennungs-Beispiele
-
-### HIGH Confidence (Korrekturen)
-
-```
-✅ "Nein, verwende X statt Y"
-✅ "Tatsächlich ist es X, nicht Y"
-✅ "Niemals X tun"
-✅ "Immer Y prüfen"
-```
-
-### MEDIUM Confidence (Approvals)
-
-```
-✅ "Ja, perfekt!"
-✅ "Das funktioniert gut"
-✅ "Genau so sollte es sein"
-```
-
-### LOW Confidence (Überlegungen)
-
-```
-✅ "Have you considered X?"
-✅ "Was ist mit Y?"
-✅ "Warum nicht Z verwenden?"
-```
-
----
-
-## 🚨 Troubleshooting Quick Ref
-
-| Problem | Lösung |
-|---------|--------|
-| Keine Signale erkannt | Deutlichere Korrekturen, oder `--semantic` nutzen |
-| Skill nicht aktualisiert | Backup prüfen: `~/.claude/skills/{skill}/.backups/` |
-| Git-Commit schlägt fehl | Manuell: `cd ~/.claude/skills && git commit -m "..."` |
-| Auto-Reflection läuft nicht | Hook prüfen: `cat ~/.claude/reflect-hook.log` |
-| Rollback nötig | `cd ~/.claude/skills && git revert HEAD` |
-| Semantic Detection langsam | Normal (~2-3s), nutzt Claude Haiku |
-
-**Mehr Details**: [USER_GUIDE.md#troubleshooting](USER_GUIDE.md#troubleshooting)
 
 ---
 
@@ -408,6 +214,8 @@ python3 semantic_detector.py "Nein, benutze pytest statt unittest"
 | `/reflect-on` | Auto-Reflection aktivieren |
 | `/reflect-off` | Auto-Reflection deaktivieren |
 | `/reflect-status` | Status anzeigen |
+| `/reflect-stats` | Cross-Skill Statistiken (NEU!) |
+| `/reflect-promote` | Learnings zu Global promoten (NEU!) |
 
 ### CLI-Optionen
 
@@ -427,61 +235,51 @@ python3 semantic_detector.py "Nein, benutze pytest statt unittest"
 
 ---
 
-## 🤝 Contributing
+## 🎓 Empfohlener Lernpfad
 
-### Custom Patterns hinzufügen
+### Woche 1-2: Manual Mode + Semantic
+- `/reflect --semantic` nach Sessions mit Korrekturen
+- Verschiedene Sprachen ausprobieren
 
-Editieren Sie `scripts/extract_signals.py`:
+### Woche 3-4: Cross-Skill Tracking
+- `/reflect-stats` regelmäßig prüfen
+- Beobachten wie Learnings über Repos akkumulieren
 
-```python
-CORRECTION_PATTERNS = [
-    r"(?i)no,?\s+don't\s+(?:do|use)\s+(.+?)[,.]?\s+(?:do|use)\s+(.+)",
-    r"(?i)YOUR_PATTERN_HERE",  # ← Fügen Sie hier hinzu
-]
-```
+### Ab Woche 5: Promotion Flow
+- `/reflect-promote` für reife Learnings
+- Globale CLAUDE.md aufbauen
 
-### Pattern-Library erweitern
+---
 
-Dokumentieren Sie neue Patterns in:
-```
-references/signal-patterns.md
-```
+## 🚨 Troubleshooting Quick Ref
+
+| Problem | Lösung |
+|---------|--------|
+| Keine Signale erkannt | `--semantic` nutzen |
+| Ledger leer | Mehr `/reflect` Sessions durchführen |
+| Promotion schlägt fehl | Threshold noch nicht erreicht (2 repos) |
+| Backup nötig | `~/.claude/backups/` prüfen |
 
 ---
 
 ## 📜 Lizenz
 
-Dieses Skill ist Teil von Claude Code.
+MIT License
 
 ---
 
 ## 🙏 Credits
 
-Inspiriert von dem Konzept "Correct once, never again" aus der Developer Community.
+Inspiriert von:
+- [BayramAnnakov/claude-reflect](https://github.com/BayramAnnakov/claude-reflect) - Semantic Detection
+- [netresearch/claude-coach-plugin](https://github.com/netresearch/claude-coach-plugin) - Cross-Repo Learning
 
 Entwickelt für Claude Code mit ❤️
 
 ---
 
-## 📞 Support
-
-- **Ausführlicher Guide**: [USER_GUIDE.md](USER_GUIDE.md)
-- **Pattern-Referenz**: [references/signal-patterns.md](references/signal-patterns.md)
-- **Issue**: Bei Problemen Claude Code Issues melden
-
----
-
-## 🎯 Nächste Schritte
-
-1. **Lesen Sie**: [USER_GUIDE.md](USER_GUIDE.md)
-2. **Status prüfen**: `/reflect-status`
-3. **Erste Reflection**: Arbeiten Sie mit Claude → Korrigieren Sie etwas → `/reflect`
-4. **Multi-Language testen**: `/reflect --semantic`
-5. **Git-History ansehen**: `cd ~/.claude/skills && git log --oneline`
-6. **Bei Gefallen**: `/reflect-on` für Auto-Modus
-
 **Happy Learning!** 🚀
 
 ---
 
-*Version: 1.1.0 | Erstellt: 2026-01-05 | Semantic Detection: 2026-01-16*
+*Version: 1.2.0 | Semantic Detection: v1.1 | Cross-Skill Learning: v1.2*
