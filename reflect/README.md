@@ -15,8 +15,61 @@ Ein intelligentes Lernsystem für Claude Code, das aus Ihren Korrekturen lernt u
 # Manuelle Analyse nach einer Session mit Korrekturen
 /reflect
 
+# Mit AI-powered Semantic Detection (Multi-Language!)
+/reflect --semantic
+
 # Auto-Reflection aktivieren (optional)
 /reflect-on
+```
+
+---
+
+## 🧠 NEU: Semantic Detection (v1.1)
+
+### Was ist das?
+
+Semantic Detection nutzt Claude selbst als ML-Engine für intelligentere Pattern-Erkennung:
+
+| Feature | Regex (Standard) | Semantic (--semantic) |
+|---------|------------------|----------------------|
+| **Sprachen** | Englisch + Deutsch | Alle Sprachen |
+| **Genauigkeit** | Gut | Exzellent |
+| **Geschwindigkeit** | Sofort | ~2-3s pro Message |
+| **False Positives** | Möglich | Sehr selten |
+
+### Multi-Language Beispiele
+
+```
+🇬🇧 "No, use uv instead of pip"           → ✓ Detected
+🇩🇪 "Nein, benutze pytest statt unittest" → ✓ Detected  
+🇪🇸 "No, usa Python en vez de JavaScript" → ✓ Detected
+🇫🇷 "Non, utilise toujours ruff"          → ✓ Detected
+```
+
+### Verwendung
+
+```bash
+# Standard (Regex - schnell)
+/reflect
+
+# Mit Semantic Detection (genauer, multi-language)
+/reflect --semantic
+
+# Semantic mit spezifischem Modell
+/reflect --semantic --model sonnet
+```
+
+### Wie funktioniert es?
+
+```
+User Message → Claude CLI (haiku) → JSON Analyse
+                    ↓
+              {
+                "is_learning": true,
+                "type": "correction",
+                "confidence": 0.92,
+                "extracted_learning": "Use uv instead of pip"
+              }
 ```
 
 ---
@@ -51,6 +104,11 @@ Session N: Claude verwendet uv ✅
 
 ## 🎯 Features
 
+### Zwei Detection-Modi
+
+1. **Regex** (Standard) - Schnell, Pattern-basiert
+2. **Semantic** (`--semantic`) - AI-powered, Multi-Language
+
 ### Drei Nutzungsmodi
 
 1. **Manual** - `/reflect` nach Bedarf
@@ -81,7 +139,8 @@ reflect/
 ├── SKILL.md                  # Skill-Definition
 ├── scripts/
 │   ├── reflect.py            # Haupt-Engine
-│   ├── extract_signals.py    # Pattern-Detection
+│   ├── extract_signals.py    # Pattern-Detection (Regex + Semantic)
+│   ├── semantic_detector.py  # AI-powered Detection (NEU!)
 │   ├── update_skill.py       # Safe Skill-Updates
 │   ├── present_review.py     # Interactive Review
 │   ├── hook-stop.sh          # Auto-Trigger Hook
@@ -139,7 +198,7 @@ Claude: Ok, verwende jetzt uv install...
 ### 2. Reflection ausführen
 
 ```bash
-/reflect
+/reflect --semantic
 ```
 
 ### 3. Review
@@ -152,7 +211,7 @@ REFLECTION REVIEW
 ## Signals Detected
 
 **python-project-creator**:
-  - HIGH: 1 corrections
+  - HIGH: 1 corrections (semantic: 0.92)
 
 ## python-project-creator
 
@@ -202,7 +261,7 @@ Prüfen Sie den Status:
 /reflect-on
 ```
 
-**Empfohlung**: Nutzen Sie zuerst den manuellen Modus (`/reflect`), um das System kennenzulernen.
+**Empfehlung**: Nutzen Sie zuerst den manuellen Modus (`/reflect`), um das System kennenzulernen.
 
 ### Hook-Konfiguration prüfen
 
@@ -252,6 +311,13 @@ ls -lt ~/.claude/skills/{skill-name}/.backups/
 /reflect-status
 ```
 
+### Semantic Detector testen
+
+```bash
+cd ~/.claude/skills/reflect/scripts
+python3 semantic_detector.py "Nein, benutze pytest statt unittest"
+```
+
 ---
 
 ## 🎓 Empfohlener Lernpfad
@@ -270,6 +336,7 @@ ls -lt ~/.claude/skills/{skill-name}/.backups/
 - Weiter manuell, aber öfter
 - Git-History regelmäßig prüfen
 - Patterns erkennen
+- Probieren Sie `--semantic` für nicht-englische Korrekturen
 
 **Ziel**: Learnings akkumulieren
 
@@ -320,11 +387,12 @@ ls -lt ~/.claude/skills/{skill-name}/.backups/
 
 | Problem | Lösung |
 |---------|--------|
-| Keine Signale erkannt | Deutlichere Korrekturen, siehe [Patterns](#pattern-erkennungs-beispiele) |
+| Keine Signale erkannt | Deutlichere Korrekturen, oder `--semantic` nutzen |
 | Skill nicht aktualisiert | Backup prüfen: `~/.claude/skills/{skill}/.backups/` |
 | Git-Commit schlägt fehl | Manuell: `cd ~/.claude/skills && git commit -m "..."` |
 | Auto-Reflection läuft nicht | Hook prüfen: `cat ~/.claude/reflect-hook.log` |
 | Rollback nötig | `cd ~/.claude/skills && git revert HEAD` |
+| Semantic Detection langsam | Normal (~2-3s), nutzt Claude Haiku |
 
 **Mehr Details**: [USER_GUIDE.md#troubleshooting](USER_GUIDE.md#troubleshooting)
 
@@ -334,11 +402,19 @@ ls -lt ~/.claude/skills/{skill-name}/.backups/
 
 | Command | Beschreibung |
 |---------|--------------|
-| `/reflect` | Manuelle Analyse der Session |
+| `/reflect` | Manuelle Analyse (Regex) |
+| `/reflect --semantic` | Manuelle Analyse (AI-powered) |
 | `/reflect <skill>` | Analysiere nur einen Skill |
 | `/reflect-on` | Auto-Reflection aktivieren |
 | `/reflect-off` | Auto-Reflection deaktivieren |
 | `/reflect-status` | Status anzeigen |
+
+### CLI-Optionen
+
+| Option | Beschreibung |
+|--------|--------------|
+| `--semantic` | AI-powered Detection (Multi-Language) |
+| `--model <name>` | Modell für Semantic (default: haiku) |
 
 ### Review-Optionen
 
@@ -400,11 +476,12 @@ Entwickelt für Claude Code mit ❤️
 1. **Lesen Sie**: [USER_GUIDE.md](USER_GUIDE.md)
 2. **Status prüfen**: `/reflect-status`
 3. **Erste Reflection**: Arbeiten Sie mit Claude → Korrigieren Sie etwas → `/reflect`
-4. **Git-History ansehen**: `cd ~/.claude/skills && git log --oneline`
-5. **Bei Gefallen**: `/reflect-on` für Auto-Modus
+4. **Multi-Language testen**: `/reflect --semantic`
+5. **Git-History ansehen**: `cd ~/.claude/skills && git log --oneline`
+6. **Bei Gefallen**: `/reflect-on` für Auto-Modus
 
 **Happy Learning!** 🚀
 
 ---
 
-*Version: 1.0.0 | Erstellt: 2026-01-05*
+*Version: 1.1.0 | Erstellt: 2026-01-05 | Semantic Detection: 2026-01-16*
