@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Presents proposed changes for user review with interactive approval.
+
+v1.3.0: Added meta-learning feedback logging (passive, non-blocking)
 """
 
 import json
@@ -8,6 +10,14 @@ import difflib
 from pathlib import Path
 from typing import Dict, List, Any
 import sys
+
+# Meta-learning integration (optional, passive)
+try:
+    from meta_learning import log_feedback
+    META_LEARNING_AVAILABLE = True
+except ImportError:
+    META_LEARNING_AVAILABLE = False
+
 
 def present_review(signals_by_skill: Dict[str, List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
     """
@@ -60,6 +70,9 @@ def present_review(signals_by_skill: Dict[str, List[Dict[str, Any]]]) -> List[Di
             })
             print(f"✓ Approved changes to {skill_name}")
 
+            # Meta-learning: log acceptance (passive, non-blocking)
+            _log_decision(signals, skill_name, 'accept')
+
         elif response == 'M':
             # Natural language modification
             modification = input("Describe modification: ").strip()
@@ -71,17 +84,50 @@ def present_review(signals_by_skill: Dict[str, List[Dict[str, Any]]]) -> List[Di
                     'proposed_updates': modified
                 })
                 print(f"✓ Applied modified changes to {skill_name}")
+
+                # Meta-learning: log modification
+                _log_decision(signals, skill_name, 'modify', modification)
             else:
                 print(f"⊘ Skipped {skill_name} (no modification provided)")
+                _log_decision(signals, skill_name, 'skip')
 
         elif response == 'Q':
             print("Review aborted")
+            _log_decision(signals, skill_name, 'quit')
             return []
 
         else:  # Skip
             print(f"⊘ Skipped {skill_name}")
+            _log_decision(signals, skill_name, 'skip')
 
     return approved_changes
+
+
+def _log_decision(signals: List[Dict], skill_name: str, decision: str, modification: str = None):
+    """
+    Log decision to meta-learning system.
+
+    This is completely passive and non-blocking.
+    Failures are silently ignored to never break core workflow.
+    """
+    if not META_LEARNING_AVAILABLE:
+        return
+
+    try:
+        for signal in signals:
+            log_feedback(
+                pattern_type=signal.get('type', 'unknown'),
+                pattern_regex=signal.get('detection_method', 'regex'),
+                skill_name=skill_name,
+                confidence_level=signal.get('confidence', 'UNKNOWN'),
+                decision=decision,
+                signal_content=signal.get('content', ''),
+                modification=modification
+            )
+    except Exception:
+        # Silent fail - meta-learning should never break core workflow
+        pass
+
 
 def generate_proposed_changes(skill_name: str, signals: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     """Generate proposed skill updates from signals"""
@@ -112,6 +158,7 @@ def generate_proposed_changes(skill_name: str, signals: List[Dict[str, Any]]) ->
 
     return updates
 
+
 def extract_correction_description(signal: Dict[str, Any]) -> str:
     """Extract description from correction signal"""
     if 'description' in signal:
@@ -127,6 +174,7 @@ def extract_correction_description(signal: Dict[str, Any]) -> str:
 
     return "User provided correction"
 
+
 def extract_old_approach(signal: Dict[str, Any]) -> str:
     """Extract old approach from signal"""
     match = signal.get('match', ())
@@ -136,6 +184,7 @@ def extract_old_approach(signal: Dict[str, Any]) -> str:
     # Try to extract from content
     content = signal.get('content', '')
     return content[:100]
+
 
 def extract_new_approach(signal: Dict[str, Any]) -> str:
     """Extract new approach from signal"""
@@ -147,9 +196,11 @@ def extract_new_approach(signal: Dict[str, Any]) -> str:
     content = signal.get('content', '')
     return content[:100]
 
+
 def extract_pattern_name(signal: Dict[str, Any]) -> str:
     """Extract pattern name from approval signal"""
     return signal.get('type', 'approval').capitalize()
+
 
 def extract_pattern_description(signal: Dict[str, Any]) -> str:
     """Extract pattern description from approval signal"""
@@ -161,6 +212,7 @@ def extract_pattern_description(signal: Dict[str, Any]) -> str:
         return f"Approved approach: {previous[:100]}"
 
     return "Approved user's approach"
+
 
 def show_diff(skill_name: str, proposed_updates: Dict[str, List[Dict[str, Any]]]):
     """Show unified diff of proposed changes"""
@@ -213,6 +265,7 @@ def show_diff(skill_name: str, proposed_updates: Dict[str, List[Dict[str, Any]]]
     except Exception as e:
         print(f"Error generating diff: {e}")
 
+
 def apply_modification(proposed: Dict[str, List[Dict[str, Any]]], user_instruction: str) -> Dict[str, List[Dict[str, Any]]]:
     """Apply natural language modification to proposed changes"""
     # For now, this is a placeholder
@@ -220,6 +273,7 @@ def apply_modification(proposed: Dict[str, List[Dict[str, Any]]], user_instructi
     print(f"Note: Natural language modification '{user_instruction}' would be applied here")
     print("(This feature requires Claude integration - using original proposal for now)")
     return proposed
+
 
 if __name__ == '__main__':
     # Test mode
